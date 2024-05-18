@@ -2,7 +2,6 @@ from fastapi import FastAPI, File, UploadFile
 from livestt.livestt import Recorder, transcribe
 import threading
 
-
 app = FastAPI()
 
 curr_state = False
@@ -50,12 +49,10 @@ def ModdedCeaserCipher(text: str) -> str:
     return o
 
 
-
-
 def listener():
     started = False
     while True:
-        #print(curr_state, started)
+        # print(curr_state, started)
         if curr_state and not started:
             recorder.start()
             started = True
@@ -69,20 +66,37 @@ def listener():
 thread = threading.Thread(target=listener)
 thread.start()
 
+temp_count = 0
+
+
+@app.post("/upload_audio/")
+async def create_upload_file(file: UploadFile):
+    print(file.size)
+    # Save the file in /temp
+    global temp_count
+    with open(f"temp/{temp_count}.ogg", "wb") as f:
+        f.write(file.file.read())
+    temp_count += 1
+    for t in transcribe(f"temp/{temp_count - 1}.ogg"):
+        print(t.text)
+
 
 @app.get('/')
 async def home():
     return {"Hello": "World"}
 
+
 @app.get("/state/")
 async def state():
     return {"state": curr_state}
+
 
 @app.get("/toggle/")
 async def toggle():
     global curr_state
     curr_state = not curr_state
     return {}
+
 
 @app.get("/upload/")
 async def upload(text: str):
