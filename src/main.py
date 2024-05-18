@@ -11,13 +11,43 @@ filename = "test.wav"
 recorder = Recorder(filename)
 
 
-def ModdedCeaserCipher(text: str, shift: int) -> str:
-    allowed = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+def ModdedCeaserCipher(text: str) -> str:
+    c_map = {
+        "A": "grr",
+        "B": "argh",
+        "C": "ugh",
+        "D": "rawr",
+        "E": "brr",
+        "F": "gah",
+        "G": "urr",
+        "H": "blur",
+        "I": "hmm",
+        "J": "zzz",
+        "K": "rarr",
+        "L": "blargh",
+        "M": "snar",
+        "N": "arg",
+        "O": "mur",
+        "P": "grar",
+        "Q": "urgh",
+        "R": "blurr",
+        "S": "snarl",
+        "T": "garr",
+        "U": "hur",
+        "V": "braar",
+        "W": "snur",
+        "X": "grargh",
+        "Y": "grur",
+        "Z": "arrgh",
+        " ": "hrr"
+    }
     o = ""
     for c in text:
-        if c not in allowed:
-            o += " "
+        if c.upper() in c_map:
+            o += c_map[c.upper()]
             continue
+        o += " "
+    return o
 
 
 
@@ -32,8 +62,8 @@ def listener():
         elif not curr_state and started:
             recorder.end()
             started = False
-            for t in transcribe(filename):
-                print(t.text)
+            text = list(transcribe(filename))[0]
+            print(ModdedCeaserCipher(text.text))
 
 
 thread = threading.Thread(target=listener)
