@@ -134,8 +134,12 @@ async def create_upload_file(file: UploadFile):
     with open(f"temp/{temp_count}.ogg", "wb") as f:
         f.write(file.file.read())
     temp_count += 1
+    full_text = ""
     for t in transcribe(f"temp/{temp_count - 1}.ogg"):
         print(t.text)
+        full_text += t.text
+
+    zombienoise(full_text)
 
 
 @app.get('/')
