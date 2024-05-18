@@ -12,7 +12,7 @@ import soundfile as sf
 from pydub.utils import which
 import requests
 import numpy as np
-import sounddevice as sd 
+import sounddevice as sd
 
 
 
@@ -69,9 +69,9 @@ def pplnoise(text):
   audioData  = np.array(audio.get_array_of_samples())
   sd.play(audioData, samplerate = audio.frame_rate)
   sd.wait()
-  
+
 def changep(audio, semitones):
-  newRate = int(audio.frame_rate * 2**(semitones/12)) 
+  newRate = int(audio.frame_rate * 2**(semitones/12))
   newaudio = audio._spawn(audio.raw_data, overrides={'frame_rate': newRate})
   return newaudio.set_frame_rate(audio.frame_rate)
 
@@ -116,12 +116,26 @@ def listener():
         elif not curr_state and started:
             recorder.end()
             started = False
-            for t in transcribe(filename):
-                print(t.text)
+            text = list(transcribe(filename))[0]
+            print(ModdedCeaserCipher(text.text))
 
 
 thread = threading.Thread(target=listener)
 thread.start()
+
+temp_count = 0
+
+
+@app.post("/upload_audio/")
+async def create_upload_file(file: UploadFile):
+    print(file.size)
+    # Save the file in /temp
+    global temp_count
+    with open(f"temp/{temp_count}.ogg", "wb") as f:
+        f.write(file.file.read())
+    temp_count += 1
+    for t in transcribe(f"temp/{temp_count - 1}.ogg"):
+        print(t.text)
 
 
 @app.get('/')
