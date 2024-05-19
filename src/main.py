@@ -2,7 +2,6 @@ from fastapi import FastAPI, File, UploadFile
 from livestt.livestt import Recorder, transcribe
 import threading
 
-
 from elevenlabs import play, save
 from elevenlabs.client import ElevenLabs
 from pydub import AudioSegment
@@ -13,20 +12,13 @@ from pydub.utils import which
 import requests
 import sounddevice as sd
 
-
-
 apikey = "8a887d470693e5102aa7baf862b547d5"
 
 client = ElevenLabs(
-  api_key=apikey
+    api_key=apikey
 )
 
 url = "https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
-
-
-client = ElevenLabs(
-  api_key=apikey, # Defaults to ELEVEN_API_KEY
-)
 
 
 def zombienoise(text):
@@ -65,14 +57,16 @@ def pplnoise(text):
     sd.play(audioData, samplerate=audio.frame_rate)
     sd.wait()
 
+
 def changep(audio, semitones):
-  newRate = int(audio.frame_rate * 2**(semitones/12))
-  newaudio = audio._spawn(audio.raw_data, overrides={'frame_rate': newRate})
-  return newaudio.set_frame_rate(audio.frame_rate)
+    newRate = int(audio.frame_rate * 2 ** (semitones / 12))
+    newaudio = audio._spawn(audio.raw_data, overrides={'frame_rate': newRate})
+    return newaudio.set_frame_rate(audio.frame_rate)
+
 
 def slowDown(audio, factor):
-  newaudio = audio._spawn(audio.raw_data, overrides={'frame_rate': int(audio.frame_rate*factor)})
-  return newaudio.set_frame_rate(audio.frame_rate *factor)
+    newaudio = audio._spawn(audio.raw_data, overrides={'frame_rate': int(audio.frame_rate * factor)})
+    return newaudio.set_frame_rate(audio.frame_rate * factor)
 
 
 def add_dis(audio, gain=1.5, threshold=0.5):
@@ -80,7 +74,6 @@ def add_dis(audio, gain=1.5, threshold=0.5):
     newaudio[newaudio > threshold] = threshold
     newaudio[newaudio < -threshold] = -threshold
     return newaudio
-
 
 
 app = FastAPI()
@@ -121,19 +114,12 @@ def ModdedCeaserCipher(text: str) -> str:
         "Z": "arrgh",
         " ": "hrr"
     }
-    o = ""
-    for c in text:
-        if c not in allowed:
-            o += " "
-            continue
-
-
 
 
 def listener():
     started = False
     while True:
-        #print(curr_state, started)
+        # print(curr_state, started)
         if curr_state and not started:
             recorder.start()
             started = True
@@ -148,9 +134,6 @@ thread = threading.Thread(target=listener)
 thread.start()
 
 temp_count = 0
-
-for t in transcribe("/home/aaron/apohacks-backend/temp/2.ogg"):
-    print(t.text)
 
 
 @app.post("/upload_audio/")
@@ -173,15 +156,18 @@ async def create_upload_file(file: UploadFile):
 async def home():
     return {"Hello": "World"}
 
+
 @app.get("/state/")
 async def state():
     return {"state": curr_state}
+
 
 @app.get("/toggle/")
 async def toggle():
     global curr_state
     curr_state = not curr_state
     return {}
+
 
 @app.get("/upload/")
 async def upload(text: str):
