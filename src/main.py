@@ -1,7 +1,13 @@
 from fastapi import FastAPI, File, UploadFile
 from livestt.livestt import Recorder, transcribe
 import threading
-
+import mediapipe as mp
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
+import os
+import time
+import cv2
+from cv2 import VideoCapture
 from elevenlabs import play, save
 from elevenlabs.client import ElevenLabs
 from pydub import AudioSegment
@@ -20,6 +26,16 @@ client = ElevenLabs(
 
 url = "https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
 
+arms_raised = False
+def true_arms():
+    arms_raised = True
+
+def false_arms():
+    arms_raised = False
+
+
+
+
 
 def zombienoise(text):
     audio = client.generate(
@@ -37,8 +53,7 @@ def zombienoise(text):
     save(audio, filename)
     audio = AudioSegment.from_mp3(f"temp/{name}.mp3")
     slowed_audio = slowDown(audio, 5)
-    distorted_audio_data = add_dis(slowed_audio)
-    audioData = np.array(distorted_audio_data.get_array_of_samples())
+    audioData = np.array(slowed_audio.get_array_of_samples())
     sd.play(audioData, samplerate=audio.frame_rate)
     sd.wait()
 
@@ -49,7 +64,7 @@ def pplnoise(text):
         voice="Jessie",
         model="eleven_multilingual_v2"
     )
-    name = input("Enter the name of the file: ")
+    name = "asdf"
     filename = f"{name}.mp3"
     save(audio, filename)
     audio = AudioSegment.from_mp3(f"{name}.mp3")
@@ -114,24 +129,16 @@ def ModdedCeaserCipher(text: str) -> str:
         "Z": "arrgh",
         " ": "hrr"
     }
+    o = ""
+    for c in text:
+        if c.upper() in c_map:
+            o += c_map[c.upper()]
+        if c not in c_map:
+            o += " "
+            continue
+        o += " "
+    return o
 
-
-def listener():
-    started = False
-    while True:
-        # print(curr_state, started)
-        if curr_state and not started:
-            recorder.start()
-            started = True
-        elif not curr_state and started:
-            recorder.end()
-            started = False
-            text = list(transcribe(filename))[0]
-            print(ModdedCeaserCipher(text.text))
-
-
-thread = threading.Thread(target=listener)
-thread.start()
 
 temp_count = 0
 
@@ -149,7 +156,7 @@ async def create_upload_file(file: UploadFile):
         print(t.text)
         full_text += t.text
 
-    zombienoise(full_text)
+    zombienoise(ModdedCeaserCipher(full_text))
 
 
 @app.get('/')
@@ -159,7 +166,7 @@ async def home():
 
 @app.get("/state/")
 async def state():
-    return {"state": curr_state}
+    return {"state": arms_raised}
 
 
 @app.get("/toggle/")
