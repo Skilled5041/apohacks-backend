@@ -7,15 +7,10 @@ import sounddevice as sd
 from pedalboard import Phaser, Pedalboard, Invert, PitchShift, time_stretch
 from pedalboard.io import AudioFile
 from fastapi.middleware.cors import CORSMiddleware
+
+import src.ztoh
+from livestt.livestt import transcribe
 from src import ztoh
-
-from livestt.livestt import Recorder, transcribe
-
-
-
-
-
-
 
 samplerate = 44100.0
 board = Pedalboard([
@@ -33,14 +28,14 @@ client = ElevenLabs(
 url = "https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
 
 arms_raised = False
+
+
 def true_arms():
     arms_raised = True
 
+
 def false_arms():
     arms_raised = False
-
-
-
 
 
 def zombienoise(text):
@@ -52,18 +47,14 @@ def zombienoise(text):
     name = "24"
     filename = f"temp/{name}.mp3"
     save(audio, filename)
-    audio = AudioSegment.from_mp3(f"temp/{name}.mp3")
-    slowed_audio = slowDown(audio, 5)
-    audioData = np.array(slowed_audio.get_array_of_samples())
-    sd.play(audioData, samplerate=audio.frame_rate)
     with AudioFile(f"temp/{name}.mp3").resampled_to(samplerate) as f:
         audio = f.read(f.frames)
     effected = time_stretch(stretch_factor=0.95, input_audio=board(audio, samplerate), samplerate=samplerate)
     with AudioFile('processed-output.wav', 'w', samplerate, effected.shape[0]) as f:
         f.write(effected)
-    print(effected.transpose().shape)
     sd.play(effected.transpose(), samplerate=samplerate)
     sd.wait()
+
 
 def pplnoise(text):
     audio = client.generate(
@@ -100,7 +91,6 @@ def add_dis(audio, gain=1.5, threshold=0.5):
 
 app = FastAPI()
 
-
 origins = [
     "http://localhost.tiangolo.com",
     "https://localhost.tiangolo.com",
@@ -115,62 +105,48 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+c_map = {
+    "A": "grr",
+    "B": "argh",
+    "C": "ugh",
+    "D": "rawr",
+    "E": " ",
+    "F": "gah",
+    "G": "urr",
+    "H": " ",
+    "I": "hmm",
+    "J": " ",
+    "K": "rarr",
+    "L": "blargh",
+    "M": "snar",
+    "N": "arg",
+    "O": "mur",
+    "P": "grar",
+    "Q": "urgh",
+    "R": "rrurr",
+    "S": "uarr",
+    "T": "garr",
+    "U": "hur",
+    "V": "braar",
+    "W": "snur",
+    "X": "grargh",
+    "Y": " ",
+    "Z": " ",
+    " ": " "
+}
 
-
-
-
-
-
-
-
-
-curr_state = False
-
-filename = "test.wav"
-recorder = Recorder(filename)
 
 def to_zombie_text(text: str) -> str:
-    c_map = {
-        "A": "grr",
-        "B": "argh",
-        "C": "ugh",
-        "D": "rawr",
-        "E": "brr",
-        "F": "gah",
-        "G": "urr",
-        "H": "blur",
-        "I": "hmm",
-        "J": "zzz",
-        "K": "rarr",
-        "L": "blargh",
-        "M": "snar",
-        "N": "arg",
-        "O": "mur",
-        "P": "grar",
-        "Q": "urgh",
-        "R": "blurr",
-        "S": "snarl",
-        "T": "garr",
-        "U": "hur",
-        "V": "braar",
-        "W": "snur",
-        "X": "grargh",
-        "Y": "grur",
-        "Z": "arrgh",
-        " ": "hrr"
-    }
-    o = ""
-    for c in text:
-        if c.upper() in c_map:
-            o += c_map[c.upper()]
-        if c not in c_map:
-            o += " "
-            continue
-        o += " "
-    return o
+    newstr = ""
+    for c in text.upper():
+        if c_map.get(c) is not None:
+            newstr += c_map.get(c)
+    print(newstr)
+    return newstr
 
 
 temp_count = 0
+
 
 @app.post("/zombie_audio/")
 async def create_upload_file(file: UploadFile):
@@ -186,19 +162,19 @@ async def create_upload_file(file: UploadFile):
         full_text += t.text
     ztoh.chat(full_text)
 
+
 @app.post("/upload_audio/")
 async def create_upload_file(file: UploadFile):
     print(file.size)
     # Save the file in /temp
-    global temp_count
-    with open(f"temp/{temp_count}.ogg", "wb") as f:
-        f.write(file.file.read())
-    temp_count += 1
-    full_text = ""
-    for t in transcribe(f"temp/{temp_count - 1}.ogg"):
-        print(t.text)
-        full_text += t.text
-    zombienoise(to_zombie_text(full_text))
+
+
+@app.post("/humanToZombie/{transcript}")
+async def human_to_zombie(transcript: str):
+    transcript = transcript.replace("%20", " ")
+    print(transcript)
+    zombienoise(to_zombie_text(transcript))
+    return {}
 
 
 @app.get('/')
