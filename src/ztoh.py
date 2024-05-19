@@ -5,8 +5,6 @@ from elevenlabs.client import ElevenLabs
 from pydub import AudioSegment
 import numpy as np
 
-
-
 co = cohere.Client("")
 
 

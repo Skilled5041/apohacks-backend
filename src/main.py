@@ -8,6 +8,8 @@ from pedalboard import Phaser, Pedalboard, Invert, PitchShift, time_stretch
 from pedalboard.io import AudioFile
 from fastapi.middleware.cors import CORSMiddleware
 import src.ztoh
+from livestt.livestt import transcribe
+from src import ztoh
 
 samplerate = 44100.0
 board = Pedalboard([
@@ -44,16 +46,11 @@ def zombienoise(text):
     name = "24"
     filename = f"temp/{name}.mp3"
     save(audio, filename)
-    audio = AudioSegment.from_mp3(f"temp/{name}.mp3")
-    slowed_audio = slowDown(audio, 5)
-    audioData = np.array(slowed_audio.get_array_of_samples())
-    sd.play(audioData, samplerate=audio.frame_rate)
     with AudioFile(f"temp/{name}.mp3").resampled_to(samplerate) as f:
         audio = f.read(f.frames)
     effected = time_stretch(stretch_factor=0.95, input_audio=board(audio, samplerate), samplerate=samplerate)
     with AudioFile('processed-output.wav', 'w', samplerate, effected.shape[0]) as f:
         f.write(effected)
-    print(effected.transpose().shape)
     sd.play(effected.transpose(), samplerate=samplerate)
     sd.wait()
 
@@ -107,46 +104,44 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+c_map = {
+    "A": "grr",
+    "B": "argh",
+    "C": "ugh",
+    "D": "rawr",
+    "E": " ",
+    "F": "gah",
+    "G": "urr",
+    "H": " ",
+    "I": "hmm",
+    "J": " ",
+    "K": "rarr",
+    "L": "blargh",
+    "M": "snar",
+    "N": "arg",
+    "O": "mur",
+    "P": "grar",
+    "Q": "urgh",
+    "R": "rrurr",
+    "S": "uarr",
+    "T": "garr",
+    "U": "hur",
+    "V": "braar",
+    "W": "snur",
+    "X": "grargh",
+    "Y": " ",
+    "Z": " ",
+    " ": " "
+}
 
 
 def to_zombie_text(text: str) -> str:
-    c_map = {
-        "A": "grr",
-        "B": "argh",
-        "C": "ugh",
-        "D": "rawr",
-        "E": "brr",
-        "F": "gah",
-        "G": "urr",
-        "H": "blur",
-        "I": "hmm",
-        "J": "zzz",
-        "K": "rarr",
-        "L": "blargh",
-        "M": "snar",
-        "N": "arg",
-        "O": "mur",
-        "P": "grar",
-        "Q": "urgh",
-        "R": "blurr",
-        "S": "snarl",
-        "T": "garr",
-        "U": "hur",
-        "V": "braar",
-        "W": "snur",
-        "X": "grargh",
-        "Y": "grur",
-        "Z": "arrgh",
-        " ": " "
-    }
-    o = ""
+    newstr = ""
     for c in text.upper():
-        if c in c_map:
-            o += c_map[c]
-        if c not in c_map:
-            o += " "
-            continue
-    return o
+        if c_map.get(c) is not None:
+            newstr += c_map.get(c)
+    print(newstr)
+    return newstr
 
 
 temp_count = 0
@@ -173,10 +168,12 @@ async def create_upload_file(file: UploadFile):
     # Save the file in /temp
 
 
-@app.post("/humanToZombie/")
-async def human_to_zombie(data: str):
-    print(data)
-    zombienoise(to_zombie_text(data))
+@app.post("/humanToZombie/{transcript}")
+async def human_to_zombie(transcript: str):
+    transcript = transcript.replace("%20", " ")
+    print(transcript)
+    zombienoise(to_zombie_text(transcript))
+    return {}
 
 
 @app.get('/')
