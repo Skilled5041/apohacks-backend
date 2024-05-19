@@ -127,27 +127,6 @@ filename = "test.wav"
 recorder = Recorder(filename)
 
 
-def listener():
-    started = False
-    while True:
-        # print(curr_state, started)
-        if curr_state and not started:
-            recorder.start()
-            started = True
-        elif not curr_state and started:
-            recorder.end()
-            started = False
-            text = list(transcribe(filename))[0]
-            zombie_text = to_zombie_text(text.text)
-            zombienoise(zombie_text)
-
-
-thread = threading.Thread(target=listener)
-thread.start()
-
-temp_count = 0
-
-
 @app.post("/upload_audio/")
 async def create_upload_file(file: UploadFile):
     print(file.size)
