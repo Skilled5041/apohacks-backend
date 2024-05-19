@@ -34,9 +34,7 @@ def chat(text: str):
 
   stream = co.chat_stream(
     model='command-r-plus',
-    preamble='''You are a translator who translates from zombie speak to english. Make your closest estimate to the answer. Reply directly with your estimate, do not add unnecessary dialogue.
-    If the input doesn't conform with the format, say "That is not zombie speech". The way english is translated to zombie speak is by replacing each letter with the following mapping, try to reverse this: 
-        "A": "grr",
+    preamble='''Assume you are a zombie translator, you will be give a string of letters said by a zombie, and based on this mapping 'A": "grr",
           "B": "argh",
           "C": "ugh",
           "D": "rawr",
@@ -62,12 +60,12 @@ def chat(text: str):
           "X": "grargh",
           "Y": "grur",
           "Z": "arrgh",
-          " ": "hrr"
+          " ": "hrr"' translate the string of letters of zombie noises back in to letters, based on the letters, try to make an prediction on what the zombie was trying to say. If you are unsure how to respond, just reply with a random sentence. Roleplay, meaning that you will not say anything about translating of, but JUST ONLY rely with the translated words
   ''',
     temperature=0,
     chat_history=[],
-    prompt_truncation='AUTO',
-    message="The zombie text for you to translate is: "+text
+    prompt_truncation='OFF',
+    message="translate '"+text+"' into english"
   )
 
   for event in stream:
