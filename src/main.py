@@ -11,7 +11,6 @@ import scipy.signal
 import soundfile as sf
 from pydub.utils import which
 import requests
-import numpy as np
 import sounddevice as sd
 
 
