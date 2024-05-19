@@ -1,5 +1,4 @@
 from fastapi import FastAPI, File, UploadFile
-from livestt.livestt import Recorder, transcribe
 import threading
 import mediapipe as mp
 from mediapipe.tasks import python
@@ -8,15 +7,24 @@ import os
 import time
 import cv2
 from cv2 import VideoCapture
+import random
 from elevenlabs import play, save
 from elevenlabs.client import ElevenLabs
 from pydub import AudioSegment
 import numpy as np
-import scipy.signal
-import soundfile as sf
-from pydub.utils import which
-import requests
 import sounddevice as sd
+from gtts import gTTS
+from pedalboard import Phaser, Pedalboard, Invert, PitchShift, time_stretch
+from pedalboard.io import AudioFile
+
+from livestt.livestt import Recorder, transcribe
+
+samplerate = 44100.0
+board = Pedalboard([
+    Invert(),
+    Phaser(rate_hz=samplerate),
+    PitchShift(semitones=-6),
+])
 
 apikey = "8a887d470693e5102aa7baf862b547d5"
 
@@ -44,19 +52,20 @@ def zombienoise(text):
         model="eleven_multilingual_v2"
     )
     name = "24"
-    audio = client.generate(
-        text=text,
-        voice="Jessie",
-        model="eleven_multilingual_v2"
-    )
     filename = f"temp/{name}.mp3"
     save(audio, filename)
     audio = AudioSegment.from_mp3(f"temp/{name}.mp3")
     slowed_audio = slowDown(audio, 5)
     audioData = np.array(slowed_audio.get_array_of_samples())
     sd.play(audioData, samplerate=audio.frame_rate)
+    with AudioFile(f"temp/{name}.mp3").resampled_to(samplerate) as f:
+        audio = f.read(f.frames)
+    effected = time_stretch(stretch_factor=0.95, input_audio=board(audio, samplerate), samplerate=samplerate)
+    with AudioFile('processed-output.wav', 'w', samplerate, effected.shape[0]) as f:
+        f.write(effected)
+    print(effected.transpose().shape)
+    sd.play(effected.transpose(), samplerate=samplerate)
     sd.wait()
-
 
 def pplnoise(text):
     audio = client.generate(
@@ -98,8 +107,7 @@ curr_state = False
 filename = "test.wav"
 recorder = Recorder(filename)
 
-
-def ModdedCeaserCipher(text: str) -> str:
+def to_zombie_text(text: str) -> str:
     c_map = {
         "A": "grr",
         "B": "argh",
@@ -142,7 +150,6 @@ def ModdedCeaserCipher(text: str) -> str:
 
 temp_count = 0
 
-
 @app.post("/upload_audio/")
 async def create_upload_file(file: UploadFile):
     print(file.size)
@@ -155,8 +162,7 @@ async def create_upload_file(file: UploadFile):
     for t in transcribe(f"temp/{temp_count - 1}.ogg"):
         print(t.text)
         full_text += t.text
-
-    zombienoise(ModdedCeaserCipher(full_text))
+    zombienoise(to_zombie_text(full_text))
 
 
 @app.get('/')
