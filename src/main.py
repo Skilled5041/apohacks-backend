@@ -175,14 +175,11 @@ temp_count = 0
 async def create_upload_file(file: UploadFile):
     print(file.size)
     # Save the file in /temp
-    global temp_count
-    with open(f"temp/{temp_count}.ogg", "wb") as f:
-        f.write(file.file.read())
-    temp_count += 1
-    full_text = ""
-    for t in transcribe(f"temp/{temp_count - 1}.ogg"):
-        print(t.text)
-        full_text += t.text
+
+
+@app.post("/humanToZombie/")
+async def human_to_zombie(data):
+    print(data)
     zombienoise(to_zombie_text(full_text))
 
 
