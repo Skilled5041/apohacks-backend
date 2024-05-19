@@ -7,7 +7,7 @@ import sounddevice as sd
 from pedalboard import Phaser, Pedalboard, Invert, PitchShift, time_stretch
 from pedalboard.io import AudioFile
 from fastapi.middleware.cors import CORSMiddleware
-import ztoh
+from src import ztoh
 
 from livestt.livestt import Recorder, transcribe
 

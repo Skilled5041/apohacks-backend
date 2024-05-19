@@ -7,7 +7,7 @@ import numpy as np
 
 
 
-co = cohere.Client("")
+co = cohere.Client("x7vFe9vjs2kM48246X9KCg26S1IgAUBivdMF5Zwf")
 
 
 
