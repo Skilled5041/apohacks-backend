@@ -1,16 +1,23 @@
 from fastapi import FastAPI, File, UploadFile
-from livestt.livestt import Recorder, transcribe
 import threading
-
+import random
 from elevenlabs import play, save
 from elevenlabs.client import ElevenLabs
 from pydub import AudioSegment
 import numpy as np
-import scipy.signal
-import soundfile as sf
-from pydub.utils import which
-import requests
 import sounddevice as sd
+from gtts import gTTS
+from pedalboard import Phaser, Pedalboard, Invert, PitchShift, time_stretch
+from pedalboard.io import AudioFile
+
+from livestt.livestt import Recorder, transcribe
+
+samplerate = 44100.0
+board = Pedalboard([
+    Invert(),
+    Phaser(rate_hz=samplerate),
+    PitchShift(semitones=-6),
+])
 
 apikey = "8a887d470693e5102aa7baf862b547d5"
 
@@ -28,20 +35,56 @@ def zombienoise(text):
         model="eleven_multilingual_v2"
     )
     name = "24"
-    audio = client.generate(
-        text=text,
-        voice="Jessie",
-        model="eleven_multilingual_v2"
-    )
     filename = f"temp/{name}.mp3"
     save(audio, filename)
-    audio = AudioSegment.from_mp3(f"temp/{name}.mp3")
-    slowed_audio = slowDown(audio, 5)
-    distorted_audio_data = add_dis(slowed_audio)
-    audioData = np.array(distorted_audio_data.get_array_of_samples())
-    sd.play(audioData, samplerate=audio.frame_rate)
+    with AudioFile(f"temp/{name}.mp3").resampled_to(samplerate) as f:
+        audio = f.read(f.frames)
+    effected = time_stretch(stretch_factor=0.95, input_audio=board(audio, samplerate), samplerate=samplerate)
+    with AudioFile('processed-output.wav', 'w', samplerate, effected.shape[0]) as f:
+        f.write(effected)
+    print(effected.transpose().shape)
+    sd.play(effected.transpose(), samplerate=samplerate)
     sd.wait()
 
+
+c_map = {
+    "A": "grr",
+    "B": "argh",
+    "C": "ugh",
+    "D": "rawr",
+    "E": " ",
+    "F": "gah",
+    "G": "urr",
+    "H": " ",
+    "I": "hmm",
+    "J": " ",
+    "K": "rarr",
+    "L": "blargh",
+    "M": "snar",
+    "N": "arg",
+    "O": "mur",
+    "P": "grar",
+    "Q": "urgh",
+    "R": "rrurr",
+    "S": "uarr",
+    "T": "garr",
+    "U": "hur",
+    "V": "braar",
+    "W": "snur",
+    "X": "grargh",
+    "Y": " ",
+    "Z": " ",
+    " ": " "
+}
+
+
+def to_zombie_text(text: str) -> str:
+    newstr = ""
+    for c in text.upper():
+        if c_map.get(c) is not None:
+            newstr += c_map.get(c)
+    print(newstr)
+    return newstr
 
 def pplnoise(text):
     audio = client.generate(
@@ -84,38 +127,6 @@ filename = "test.wav"
 recorder = Recorder(filename)
 
 
-def ModdedCeaserCipher(text: str) -> str:
-    c_map = {
-        "A": "grr",
-        "B": "argh",
-        "C": "ugh",
-        "D": "rawr",
-        "E": "brr",
-        "F": "gah",
-        "G": "urr",
-        "H": "blur",
-        "I": "hmm",
-        "J": "zzz",
-        "K": "rarr",
-        "L": "blargh",
-        "M": "snar",
-        "N": "arg",
-        "O": "mur",
-        "P": "grar",
-        "Q": "urgh",
-        "R": "blurr",
-        "S": "snarl",
-        "T": "garr",
-        "U": "hur",
-        "V": "braar",
-        "W": "snur",
-        "X": "grargh",
-        "Y": "grur",
-        "Z": "arrgh",
-        " ": "hrr"
-    }
-
-
 def listener():
     started = False
     while True:
@@ -127,7 +138,8 @@ def listener():
             recorder.end()
             started = False
             text = list(transcribe(filename))[0]
-            print(ModdedCeaserCipher(text.text))
+            zombie_text = to_zombie_text(text.text)
+            zombienoise(zombie_text)
 
 
 thread = threading.Thread(target=listener)
@@ -149,7 +161,7 @@ async def create_upload_file(file: UploadFile):
         print(t.text)
         full_text += t.text
 
-    zombienoise(full_text)
+    zombienoise(to_zombie_text(full_text))
 
 
 @app.get('/')
