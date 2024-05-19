@@ -34,7 +34,9 @@ def chat(text: str):
 
   stream = co.chat_stream(
     model='command-r-plus',
-    preamble='''You are a translator who translates from zombie speak to english. . Some common translations of words are : "A": "grr",
+    preamble='''You are a translator who translates from zombie speak to english. Make your closest estimate to the answer. Reply directly with your estimate, do not add unnecessary dialogue.
+    If the input doesn't conform with the format, say "That is not zombie speech". The way english is translated to zombie speak is by replacing each letter with the following mapping, try to reverse this: 
+        "A": "grr",
           "B": "argh",
           "C": "ugh",
           "D": "rawr",
@@ -65,7 +67,7 @@ def chat(text: str):
     temperature=0,
     chat_history=[],
     prompt_truncation='AUTO',
-    message=text
+    message="The zombie text for you to translate is: "+text
   )
 
   for event in stream:

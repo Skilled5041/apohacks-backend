@@ -15,8 +15,8 @@ from src import ztoh
 samplerate = 44100.0
 board = Pedalboard([
     Invert(),
-    Phaser(rate_hz=samplerate),
     PitchShift(semitones=-6),
+    Phaser(rate_hz=samplerate),
 ])
 
 apikey = "8a887d470693e5102aa7baf862b547d5"
@@ -49,7 +49,7 @@ def zombienoise(text):
     save(audio, filename)
     with AudioFile(f"temp/{name}.mp3").resampled_to(samplerate) as f:
         audio = f.read(f.frames)
-    effected = time_stretch(stretch_factor=0.95, input_audio=board(audio, samplerate), samplerate=samplerate)
+    effected = time_stretch(stretch_factor=0.90, input_audio=board(audio, samplerate), samplerate=samplerate)
     with AudioFile('processed-output.wav', 'w', samplerate, effected.shape[0]) as f:
         f.write(effected)
     sd.play(effected.transpose(), samplerate=samplerate)
@@ -142,25 +142,17 @@ def to_zombie_text(text: str) -> str:
         if c_map.get(c) is not None:
             newstr += c_map.get(c)
     print(newstr)
-    return newstr
+    return newstr.strip()
 
 
 temp_count = 0
 
 
-@app.post("/zombie_audio/")
-async def create_upload_file(file: UploadFile):
-    print(file.size)
-    # Save the file in /temp
-    global temp_count
-    with open(f"temp/{temp_count}.ogg", "wb") as f:
-        f.write(file.file.read())
-    temp_count += 1
-    full_text = ""
-    for t in transcribe(f"temp/{temp_count - 1}.ogg"):
-        print(t.text)
-        full_text += t.text
-    ztoh.chat(full_text)
+@app.post("/zombie_audio/{transcript}")
+async def create_upload_file(transcript: str):
+    transcript = transcript.replace("%20", " ")
+    zombie_text = to_zombie_text(transcript)
+    ztoh.chat(zombie_text)
 
 
 @app.post("/upload_audio/")
