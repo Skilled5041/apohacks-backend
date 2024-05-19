@@ -7,7 +7,7 @@ import sounddevice as sd
 from pedalboard import Phaser, Pedalboard, Invert, PitchShift, time_stretch
 from pedalboard.io import AudioFile
 from fastapi.middleware.cors import CORSMiddleware
-
+import ztoh
 
 from livestt.livestt import Recorder, transcribe
 
@@ -171,6 +171,20 @@ def to_zombie_text(text: str) -> str:
 
 
 temp_count = 0
+
+@app.post("/zombie_audio/")
+async def create_upload_file(file: UploadFile):
+    print(file.size)
+    # Save the file in /temp
+    global temp_count
+    with open(f"temp/{temp_count}.ogg", "wb") as f:
+        f.write(file.file.read())
+    temp_count += 1
+    full_text = ""
+    for t in transcribe(f"temp/{temp_count - 1}.ogg"):
+        print(t.text)
+        full_text += t.text
+    ztoh.chat(full_text)
 
 @app.post("/upload_audio/")
 async def create_upload_file(file: UploadFile):
