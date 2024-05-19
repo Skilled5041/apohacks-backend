@@ -7,15 +7,7 @@ import sounddevice as sd
 from pedalboard import Phaser, Pedalboard, Invert, PitchShift, time_stretch
 from pedalboard.io import AudioFile
 from fastapi.middleware.cors import CORSMiddleware
-import ztoh
-
-from livestt.livestt import Recorder, transcribe
-
-
-
-
-
-
+import src.ztoh
 
 samplerate = 44100.0
 board = Pedalboard([
@@ -33,14 +25,14 @@ client = ElevenLabs(
 url = "https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
 
 arms_raised = False
+
+
 def true_arms():
     arms_raised = True
 
+
 def false_arms():
     arms_raised = False
-
-
-
 
 
 def zombienoise(text):
@@ -64,6 +56,7 @@ def zombienoise(text):
     print(effected.transpose().shape)
     sd.play(effected.transpose(), samplerate=samplerate)
     sd.wait()
+
 
 def pplnoise(text):
     audio = client.generate(
@@ -100,7 +93,6 @@ def add_dis(audio, gain=1.5, threshold=0.5):
 
 app = FastAPI()
 
-
 origins = [
     "http://localhost.tiangolo.com",
     "https://localhost.tiangolo.com",
@@ -116,18 +108,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-
-
-
-
-
-
-
-curr_state = False
-
-filename = "test.wav"
-recorder = Recorder(filename)
 
 def to_zombie_text(text: str) -> str:
     c_map = {
@@ -171,6 +151,7 @@ def to_zombie_text(text: str) -> str:
 
 temp_count = 0
 
+
 @app.post("/zombie_audio/")
 async def create_upload_file(file: UploadFile):
     print(file.size)
@@ -185,6 +166,7 @@ async def create_upload_file(file: UploadFile):
         full_text += t.text
     ztoh.chat(full_text)
 
+
 @app.post("/upload_audio/")
 async def create_upload_file(file: UploadFile):
     print(file.size)
@@ -192,9 +174,9 @@ async def create_upload_file(file: UploadFile):
 
 
 @app.post("/humanToZombie/")
-async def human_to_zombie(data):
+async def human_to_zombie(data: str):
     print(data)
-    zombienoise(to_zombie_text(full_text))
+    zombienoise(to_zombie_text(data))
 
 
 @app.get('/')

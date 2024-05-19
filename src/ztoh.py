@@ -10,7 +10,6 @@ import numpy as np
 co = cohere.Client("")
 
 
-
 apikey = "8a887d470693e5102aa7baf862b547d5"
 
 client = ElevenLabs(
