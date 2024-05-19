@@ -1,23 +1,21 @@
-from fastapi import FastAPI, File, UploadFile
-import threading
-import mediapipe as mp
-from mediapipe.tasks import python
-from mediapipe.tasks.python import vision
-import os
-import time
-import cv2
-from cv2 import VideoCapture
-import random
-from elevenlabs import play, save
+from fastapi import FastAPI, UploadFile
+from elevenlabs import save
 from elevenlabs.client import ElevenLabs
 from pydub import AudioSegment
 import numpy as np
 import sounddevice as sd
-from gtts import gTTS
 from pedalboard import Phaser, Pedalboard, Invert, PitchShift, time_stretch
 from pedalboard.io import AudioFile
+from fastapi.middleware.cors import CORSMiddleware
+
 
 from livestt.livestt import Recorder, transcribe
+
+
+
+
+
+
 
 samplerate = 44100.0
 board = Pedalboard([
@@ -101,6 +99,30 @@ def add_dis(audio, gain=1.5, threshold=0.5):
 
 
 app = FastAPI()
+
+
+origins = [
+    "http://localhost.tiangolo.com",
+    "https://localhost.tiangolo.com",
+    "http://localhost",
+    "http://localhost:8080",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+
+
+
+
+
+
 
 curr_state = False
 
