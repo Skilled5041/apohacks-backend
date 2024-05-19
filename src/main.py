@@ -135,16 +135,15 @@ def to_zombie_text(text: str) -> str:
         "X": "grargh",
         "Y": "grur",
         "Z": "arrgh",
-        " ": "hrr"
+        " ": " "
     }
     o = ""
-    for c in text:
-        if c.upper() in c_map:
-            o += c_map[c.upper()]
+    for c in text.upper():
+        if c in c_map:
+            o += c_map[c]
         if c not in c_map:
             o += " "
             continue
-        o += " "
     return o
 
 
